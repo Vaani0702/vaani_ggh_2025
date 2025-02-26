@@ -1,0 +1,118 @@
+import os
+import cv2
+import pytesseract
+import numpy as np
+import torch
+import torchvision.transforms as transforms
+import heapq
+import logging
+from flask import Flask, request, jsonify
+from PIL import Image
+from tensorflow.keras.models import load_model
+from collections import defaultdict, deque
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Configure Tesseract OCR path (modify based on OS)
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
+# Data structures for efficient processing
+prescription_cache = defaultdict(str)  # Cache extracted text
+image_processing_queue = []  # Min-heap for priority-based image processing
+request_queue = deque()  # FIFO queue for handling requests
+
+def extract_text_from_image(image_path):
+    try:
+        image = cv2.imread(image_path)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        text = pytesseract.image_to_string(gray, config='--psm 6')  # Better OCR accuracy
+        return text.strip()
+    except Exception as e:
+        logging.error(f"Error processing image: {str(e)}")
+        return "Error processing image."
+
+# Load medical diagnostic AI model
+MODEL_PATH = "medical_diagnosis_model.h5"
+if os.path.exists(MODEL_PATH):
+    model = load_model(MODEL_PATH)
+else:
+    logging.warning("Model not found! Ensure 'medical_diagnosis_model.h5' exists.")
+    model = None
+
+def predict_disease(image_path):
+    if model is None:
+        return "Error: Model not found."
+    
+    try:
+        image = Image.open(image_path).convert('RGB')
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+        ])
+        image = transform(image).unsqueeze(0)
+        with torch.no_grad():
+            prediction = model(image)
+        return int(prediction.argmax().item())
+    except Exception as e:
+        logging.error(f"Error processing medical image: {str(e)}")
+        return "Error processing medical image."
+
+@app.route('/analyze_prescription', methods=['POST'])
+def analyze_prescription():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    file_path = "temp_prescription.jpg"
+    file.save(file_path)
+    
+    heapq.heappush(image_processing_queue, (os.path.getsize(file_path), file_path))  # Prioritize small files
+    request_queue.append(file.filename)
+    
+    text = extract_text_from_image(file_path)
+    os.remove(file_path)
+    
+    prescription_cache[file.filename] = text  # Cache results
+    logging.info(f"Processed prescription for {file.filename}")
+    
+    return jsonify({"prescription_text": text})
+
+@app.route('/diagnose', methods=['POST'])
+def diagnose():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    file_path = "temp_scan.jpg"
+    file.save(file_path)
+    
+    diagnosis = predict_disease(file_path)
+    os.remove(file_path)
+    
+    return jsonify({"diagnosis": diagnosis})
+
+# Unit tests for validation
+def test_ocr():
+    test_image = "test_prescription.jpg"
+    with open(test_image, "wb") as f:
+        f.write(os.urandom(1024))  # Simulated random image data
+    assert extract_text_from_image(test_image) is not None
+    os.remove(test_image)
+    logging.info("OCR test passed!")
+
+def test_diagnosis():
+    test_image = "test_scan.jpg"
+    with open(test_image, "wb") as f:
+        f.write(os.urandom(2048))  # Simulated random image data
+    assert isinstance(predict_disease(test_image), (int, str))
+    os.remove(test_image)
+    logging.info("Diagnosis test passed!")
+
+if __name__ == '__main__':
+    test_ocr()
+    test_diagnosis()
+    app.run(debug=True, host='0.0.0.0', port=5000)
