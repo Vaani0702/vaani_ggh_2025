@@ -3,24 +3,6 @@
 ## Overview
 AI Medical Assistant is an AI-powered solution designed to assist pharmacists and healthcare professionals by automating prescription analysis and medical image diagnostics. It leverages **Optical Character Recognition (OCR)** for prescription text extraction and **Deep Learning** for disease prediction based on medical images.
 
-## Table of Contents
-- [Project Overview](#overview)
-- [Repository Link](#repository-link)
-- [Problem Statement](#problem-statement)
-- [Solution Approach](#solution-approach)
-- [Architecture & Workflow](#architecture--workflow)
-- [Technologies Used](#technologies-used)
-- [Implementation & Code Quality](#implementation--code-quality)
-- [Testing & Validation](#testing--validation)
-- [Impact & Feasibility](#impact--feasibility)
-- [Future Enhancements](#future-enhancements)
-- [Installation & Setup](#installation--setup)
-- [How to Run](#how-to-run)
-- [References & Appendices](#references--appendices)
-
-## Repository Link
-[GitHub Repository](#) *(Insert your repository link here)*
-
 ## Problem Statement
 Medical professionals often face challenges in processing handwritten prescriptions and diagnosing diseases efficiently. Our solution addresses this by:
 - Automating prescription recognition to reduce human errors in medication dispensing.
@@ -36,8 +18,6 @@ Our system consists of two core AI functionalities:
 2. The prescription text is extracted using **Tesseract OCR**.
 3. Medical images are analyzed using a **CNN-based AI model** for disease prediction.
 4. The processed data is returned via a Flask-based API.
-
-![System Architecture](#) *(Attach a diagram illustrating the process)*
 
 ## Technologies Used
 - **Programming Languages & Frameworks**
@@ -85,8 +65,7 @@ Our system consists of two core AI functionalities:
    pip install -r requirements.txt
    ```
 3. **Download and Configure Tesseract OCR:**
-   - Install Tesseract OCR from [Tesseract Website](https://github.com/tesseract-ocr/tesseract)
-   - Ensure it is accessible via the system path.
+   - Install Tesseract OCR and ensure it is accessible via the system path.
 
 ## How to Run
 1. **Start the Flask API:**
@@ -113,4 +92,6 @@ Our system consists of two core AI functionalities:
 - **Sample Prescription Images Dataset** (mock data used for OCR training)
 - **Open-source Medical Imaging Datasets** (e.g., NIH Chest X-ray dataset, Kaggle healthcare datasets)
 - **System Architecture Diagram** *(Attach a clear diagram illustrating system components & workflow)*
+
+
 
